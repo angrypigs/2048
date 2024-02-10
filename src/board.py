@@ -19,3 +19,32 @@ class Board:
         for i in range(2):
             start_blocks.append(self.__new_block())
         return tuple(start_blocks)
+
+    def move_left(self):
+        movements = []
+        flag_any_move = False
+        for row in range(4):
+            for col in range(1, 4):
+                if self.matrix[row][col] != 0:
+                    pos = col
+                    while pos > 0 and self.matrix[row][pos - 1] == 0:
+                        self.matrix[row][pos - 1] = self.matrix[row][pos]
+                        self.matrix[row][pos] = 0
+                        pos -= 1
+                    if pos > 0 and self.matrix[row][pos] == self.matrix[row][pos - 1]:
+                        self.matrix[row][pos] = 0
+                        self.matrix[row][pos - 1] *= 2
+                        movements.append(((row, col), (row, pos - 1)))
+                        movements.append(((row, col), "increase"))
+                        movements.append(((row, pos - 1), "remove"))
+                        flag_any_move = True
+                    elif pos != col:
+                        movements.append(((row, col), (row, pos)))
+                        flag_any_move = True
+        if flag_any_move:
+            a, b = self.__new_block()
+            movements.append(((a, b), "new"))
+        return tuple(movements)
+
+
+                

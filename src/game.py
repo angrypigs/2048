@@ -1,4 +1,5 @@
 import pygame
+from pygame.math import Vector2
 import random
 
 from src.utils import *
@@ -16,6 +17,8 @@ class Game:
         self.clock = pygame.time.Clock()
         self.background = pygame.Surface((WIDTH, HEIGHT))
         self.background.fill((251, 248, 239))
+        self.index_to_remove = None
+        self.coords_to_create = None
         pygame.draw.rect(self.background,
                          (187, 173, 160),
                          (X_CORNER, Y_CORNER, 800, 800),
@@ -36,10 +39,70 @@ class Game:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_LEFT:
+                        self.handle_board_response(self.board.move_left())
             self.draw_game()
+            if not any(self.blocks) and self.index_to_remove is not None:
+                self.blocks.pop(self.index_to_remove)
+                self.index_to_remove = None
+            if not any(self.blocks) and self.coords_to_create is not None:
+                self.place_block(self.coords_to_create[1], self.coords_to_create[0])
+                self.coords_to_create = None
             pygame.display.flip()
             self.clock.tick(FPS)
     
+    def handle_board_response(self, response: tuple[tuple]) -> None:
+        for i in self.board.matrix:
+            print(i)
+        response = sorted(response, key = lambda x: not isinstance(x[1], str))
+        print(response)
+        indexes_to_elevate = []
+        for coords, event in response:
+            index = next((index for index, obj in enumerate(self.blocks) if obj.matrix_coords == Vector2(coords[1], coords[0])), None)
+            if index is not None:
+                if type(event) == tuple:
+                    y = event[0] - coords[0]
+                    x = event[1] - coords[1]
+                    if x > 0:
+                        self.blocks[index].move("right", x, (X_CORNER + BLOCK_PADDING * (event[1] + 1)
+                                                 + BLOCK_SIZE * event[1] + BLOCK_SIZE // 2))
+                    elif x < 0:
+                        self.blocks[index].move("left", x, (X_CORNER + BLOCK_PADDING * (event[1] + 1) 
+                                               + BLOCK_SIZE * event[1] + BLOCK_SIZE // 2))
+                    elif y > 0:
+                        self.blocks[index].move("down", y, (X_CORNER + BLOCK_PADDING * (event[0] + 1)
+                                                 + BLOCK_SIZE * event[0] + BLOCK_SIZE // 2))
+                    elif y < 0:
+                        self.blocks[index].move("up", y, (X_CORNER + BLOCK_PADDING * (event[0] + 1)
+                                                 + BLOCK_SIZE * event[0] + BLOCK_SIZE // 2))
+                elif event == "increase":
+                    indexes_to_elevate.append(index)
+                    self.blocks[index].action = "increase"
+                elif event == "remove":
+                    self.index_to_remove = index
+            elif event == "new":
+                self.coords_to_create = coords
+            else:
+                print(coords)
+        for index in indexes_to_elevate:
+            block = self.blocks.pop(index)
+            self.blocks.append(block)
+                
+    def place_block(self, x: int, y: int) -> None:
+        val = self.board.matrix[y][x]
+        self.blocks.append(
+            Block(
+                self.screen,
+                val,
+                (x, y),
+                (
+                    X_CORNER + BLOCK_PADDING * (x + 1) + BLOCK_SIZE * x + BLOCK_SIZE // 2, 
+                    Y_CORNER + BLOCK_PADDING * (y + 1) + BLOCK_SIZE * y + BLOCK_SIZE // 2
+                )
+            )
+        )
+
     def draw_game(self) -> None:
         self.screen.blit(self.background, (0, 0))
         for block in self.blocks:
@@ -48,16 +111,4 @@ class Game:
     def new_game(self) -> None:
         self.blocks.clear()
         for y, x in self.board.reset_board():
-            val = self.board.matrix[y][x]
-            self.blocks.append(
-                Block(
-                    self.screen,
-                    val,
-                    get_color(val),
-                    get_font_color(val),
-                    (
-                        X_CORNER + 16 + 196 * x, 
-                        Y_CORNER + 16 + 196 * y
-                    )
-                )
-            )
+            self.place_block(x, y)
