@@ -13,7 +13,7 @@ class Block:
                  matrix_coords: tuple[int, int],
                  coords: tuple[int, int]) -> None:
         self.ANIM_LIMIT = 6
-        self.FRAME_LIMIT = 10
+        self.FRAME_LIMIT = 8
         self.anim = False
         self.screen = screen
         self.origin = Surface((BLOCK_SIZE, BLOCK_SIZE), SRCALPHA)
@@ -55,6 +55,7 @@ class Block:
         self.val *= 2
         draw.rect(self.origin, get_color(self.val), (0, 0, BLOCK_SIZE, BLOCK_SIZE),
                   0, 8)
+        self.font = font.Font(res_path("assets/ClearSans-Regular.ttf"), 65 // (len(str(self.val))) + 35)
         new_font : Surface = self.font.render(f"{self.val}", True, get_font_color(self.val))
         self.origin.blit(new_font, (
             (BLOCK_SIZE - new_font.get_width()) // 2,
@@ -118,7 +119,6 @@ class Block:
             self.coords.x if direction in ("left", "right") else self.coords.y,
             destination, self.FRAME_LIMIT
         )
-        print(self.movements)
         if direction in ("left", "right"):
             self.matrix_coords.x += steps
         else:
