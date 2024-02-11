@@ -50,6 +50,15 @@ def lerp_quadratic(a: float, b: float, s: int) -> tuple[int]:
         values.append(int(value))
     return tuple(values)
 
+def lerp_quadratic_reverse(a: float, b: float, s: int) -> tuple[int]:
+    values = []
+    diff = b - a
+    for i in range(s+1):
+        x = i / s
+        value = b - diff * math.pow(1 - x, 2)
+        values.append(int(value))
+    return tuple(values)
+
 def res_path(rel_path: str) -> str:
     """
     Return path to file modified by auto_py_to_exe path if packed to exe already

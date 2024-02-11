@@ -1,4 +1,4 @@
-from pygame import Surface, draw, font, transform
+from pygame import Surface, draw, font, transform, SRCALPHA
 from pygame.math import Vector2
 
 from src.utils import *
@@ -12,13 +12,14 @@ class Block:
                  value: int,
                  matrix_coords: tuple[int, int],
                  coords: tuple[int, int]) -> None:
-        self.ANIM_LIMIT = 8
+        self.ANIM_LIMIT = 6
+        self.FRAME_LIMIT = 10
         self.anim = False
         self.screen = screen
-        self.origin = Surface((BLOCK_SIZE, BLOCK_SIZE))
+        self.origin = Surface((BLOCK_SIZE, BLOCK_SIZE), SRCALPHA)
         self.origin.set_colorkey((255, 0, 255))
         self.origin.fill((255, 0, 255))
-        self.font = font.Font(res_path("assets/ClearSans-Regular.ttf"), 60)
+        self.font = font.Font(res_path("assets/ClearSans-Regular.ttf"), 100)
         self.val = value // 2
         self.__increase_value()
         self.surf = self.origin.copy()
@@ -36,17 +37,15 @@ class Block:
 
     def __increase(self) -> None:
         self.counter += 1
-        if self.counter % 2 == 0:
-            self.surf = transform.smoothscale(self.surf, tuple([x + 10 for x in self.surf.get_size()]))
-            self.surf.set_colorkey((255, 0, 255))
-            self.__set_coords(self.coords.x, self.coords.y)
+        self.surf = transform.smoothscale(self.surf, tuple([x + 3 for x in self.surf.get_size()]))
+        self.surf.set_colorkey((255, 0, 255))
+        self.__set_coords(self.coords.x, self.coords.y)
     
     def __decrease(self) -> None:
         self.counter -= 1
-        if self.counter % 2 == 0:
-            self.surf = transform.smoothscale(self.surf, tuple([x - 10 for x in self.surf.get_size()]))
-            self.surf.set_colorkey((255, 0, 255))
-            self.__set_coords(self.coords.x, self.coords.y)
+        self.surf = transform.smoothscale(self.surf, tuple([x - 3 for x in self.surf.get_size()]))
+        self.surf.set_colorkey((255, 0, 255))
+        self.__set_coords(self.coords.x, self.coords.y)
 
     def __set_coords(self, x: int, y: int) -> None:
         self.blit_coords = Vector2(x - (self.surf.get_width() // 2),
@@ -79,7 +78,7 @@ class Block:
             case "up" | "down":
                 self.counter += 1
                 if self.counter < len(self.movements):
-                    self.coords.x = self.movements[self.counter]
+                    self.coords.y = self.movements[self.counter]
                     self.__set_coords(self.coords.x, self.coords.y)
                     self.anim = True
                     return
@@ -107,7 +106,6 @@ class Block:
                     self.surf = self.origin.copy()
                     self.__set_coords(self.coords.x, self.coords.y)
                     self.anim = False
-                    print(self.val)
                 elif self.counter == -self.ANIM_LIMIT:
                     self.action = "increase"
 
@@ -116,10 +114,11 @@ class Block:
              steps: int,
              destination: int) -> None:
         self.mode = direction
-        self.movements = lerp_quadratic(
+        self.movements = lerp_quadratic_reverse(
             self.coords.x if direction in ("left", "right") else self.coords.y,
-            destination, self.ANIM_LIMIT
+            destination, self.FRAME_LIMIT
         )
+        print(self.movements)
         if direction in ("left", "right"):
             self.matrix_coords.x += steps
         else:
